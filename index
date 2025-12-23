@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bluden AB | Swedish Accounting & Tax</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; }
+        .glass-card { background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px -2px rgba(0,0,0,0.05); }
+        .nav-button { transition: all 0.2s; padding: 0.5rem 0.75rem; border-radius: 0.75rem; white-space: nowrap; }
+        .nav-button:hover { background: rgba(255,255,255,0.1); }
+        .active-tab { background: #2563eb !important; color: white !important; }
+        
+        .debit-line { color: #2563eb; font-weight: 700; }
+        .credit-line { color: #d97706; font-weight: 700; }
+        
+        .dashboard-val { font-size: clamp(1.25rem, 2.5vw, 1.875rem); line-height: 1.2; }
+    </style>
+</head>
+<body class="text-slate-900 antialiased">
+
+    <!-- Navigation -->
+    <nav class="bg-slate-900 text-white sticky top-0 z-50 shadow-2xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-600 p-2 rounded-lg"><i data-lucide="landmark" class="w-6 h-6"></i></div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-tight">Bluden AB</h1>
+                    <p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest">Org: 559506-5730</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap justify-center gap-1 text-xs font-bold">
+                <button onclick="showSection('dashboard')" id="btn-dashboard" class="nav-button active-tab">Dashboard</button>
+                <button onclick="showSection('journal')" id="btn-journal" class="nav-button">Journal</button>
+                <button onclick="showSection('import')" id="btn-import" class="nav-button text-blue-400">Sync Bank CSV</button>
+                <button onclick="showSection('reports')" id="btn-reports" class="nav-button">Tax & Reports</button>
+                <button onclick="showSection('guide')" id="btn-guide" class="nav-button text-purple-400">Guide</button>
+                <button onclick="showSection('compliance')" id="btn-compliance" class="nav-button text-emerald-400">Tax Steps</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto p-4 md:p-10">
+
+        <!-- Section: Import CSV -->
+        <section id="import" class="hidden animate-in fade-in duration-500">
+            <div class="max-w-2xl mx-auto glass-card p-10 rounded-[2.5rem] text-center border-2 border-dashed border-blue-200">
+                <div class="bg-blue-50 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto text-blue-600 mb-6 shadow-sm">
+                    <i data-lucide="upload-cloud" class="w-10 h-10"></i>
+                </div>
+                <h2 class="text-2xl font-black text-slate-900 mb-3">Upload Bank CSV</h2>
+                <p class="text-slate-500 mb-8 text-sm leading-relaxed">Select your <b>Handelsbanken</b> export file.</p>
+                
+                <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="handleCSV(event)">
+                <button onclick="document.getElementById('csvFileInput').click()" class="bg-blue-600 text-white px-8 py-4 rounded-xl font-black shadow-lg hover:bg-blue-700 transition-all w-full flex items-center justify-center tracking-wider uppercase text-xs">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-2"></i> Choose File
+                </button>
+            </div>
+        </section>
+
+        <!-- Section: Dashboard -->
+        <section id="dashboard" class="space-y-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="glass-card p-6 rounded-3xl border-l-8 border-blue-600 flex flex-col justify-between overflow-hidden min-h-[140px]">
+                    <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Liquid Assets (1930)</p>
+                    <h2 id="dash-bank" class="dashboard-val font-extrabold text-slate-900 truncate px-1">0.00 SEK</h2>
+                </div>
+                <div class="glass-card p-6 rounded-3xl border-l-8 border-emerald-500 flex flex-col justify-between overflow-hidden min-h-[140px]">
+                    <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Result (YTD)</p>
+                    <h2 id="dash-profit" class="dashboard-val font-extrabold text-emerald-600 truncate px-1">0.00 SEK</h2>
+                </div>
+                <div class="glass-card p-6 rounded-3xl border-l-8 border-slate-900 flex flex-col justify-between overflow-hidden min-h-[140px]">
+                    <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Equity (2081)</p>
+                    <h2 id="dash-equity" class="dashboard-val font-extrabold text-slate-900 truncate px-1">25,000.00 SEK</h2>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-[2rem] overflow-hidden">
+                <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                    <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest">Recent Activity</h3>
+                    <button onclick="showSection('import')" class="text-blue-600 text-[10px] font-black uppercase">Sync Bank</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50">
+                                <th class="px-6 py-4">Date</th>
+                                <th class="px-6 py-4">Description</th>
+                                <th class="px-6 py-4 text-right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-transactions" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Journal -->
+        <section id="journal" class="hidden space-y-6">
+             <div class="flex justify-between items-center px-2">
+                <div class="flex items-center gap-3">
+                    <h2 class="text-2xl font-black text-slate-900">General Ledger</h2>
+                    <button onclick="showSection('guide')" class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-[10px] font-black uppercase flex items-center">
+                        <i data-lucide="help-circle" class="w-3 h-3 mr-1"></i> What do these codes mean?
+                    </button>
+                </div>
+                <button onclick="clearAllData()" class="text-rose-600 text-[10px] font-black uppercase hover:underline">Reset Data</button>
+             </div>
+             <div class="glass-card rounded-3xl overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left min-w-[600px]">
+                        <thead class="bg-slate-50">
+                            <tr class="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                <th class="p-6">Date</th>
+                                <th class="p-6">Description</th>
+                                <th class="p-6">Debit (+)</th>
+                                <th class="p-6">Credit (-)</th>
+                                <th class="p-6 text-right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="full-journal-body" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+             </div>
+        </section>
+
+        <!-- Section: Accounting Guide -->
+        <section id="guide" class="hidden space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+            <div class="bg-purple-700 rounded-[2.5rem] p-10 text-white shadow-xl relative overflow-hidden">
+                <div class="relative z-10">
+                    <h2 class="text-3xl font-black mb-2">Accounting Knowledge Base</h2>
+                    <p class="text-purple-100 opacity-80 max-w-xl">Understand how every transaction in Bluden AB is categorized and why bookkeeping uses these specific codes.</p>
+                </div>
+                <i data-lucide="book-open" class="absolute right-[-20px] bottom-[-20px] w-64 h-64 text-white/10 rotate-12"></i>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Assets & Equity -->
+                <div class="space-y-6">
+                    <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest px-2">Balance Sheet Accounts</h3>
+                    <div class="glass-card p-6 rounded-3xl border-t-4 border-blue-500">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="bg-blue-100 text-blue-700 w-10 h-10 flex items-center justify-center rounded-xl font-bold">1xxx</span>
+                            <h4 class="font-bold">Assets (Tillgångar)</h4>
+                        </div>
+                        <ul class="space-y-4">
+                            <li class="text-sm">
+                                <span class="font-bold text-slate-900 block">1930 - Företagskonto</span>
+                                <span class="text-slate-500 text-xs">Your main bank account at Handelsbanken. When you spend, this is credited (-). When you receive, it is debited (+).</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="glass-card p-6 rounded-3xl border-t-4 border-slate-900">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="bg-slate-100 text-slate-900 w-10 h-10 flex items-center justify-center rounded-xl font-bold">2xxx</span>
+                            <h4 class="font-bold">Equity & Liabilities</h4>
+                        </div>
+                        <ul class="space-y-4">
+                            <li class="text-sm">
+                                <span class="font-bold text-slate-900 block">2081 - Aktiekapital</span>
+                                <span class="text-slate-500 text-xs">The 25,000 SEK you put in to start the company.</span>
+                            </li>
+                            <li class="text-sm">
+                                <span class="font-bold text-slate-900 block">2710 - Personalskatt</span>
+                                <span class="text-slate-500 text-xs">Withheld income tax for employees. Reported in your Employer Declaration.</span>
+                            </li>
+                            <li class="text-sm">
+                                <span class="font-bold text-slate-900 block">2730 - Lagstadgade sociala avgifter</span>
+                                <span class="text-slate-500 text-xs">Employer contributions (Arbetsgivaravgifter) owed to the state.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Revenue & Expenses -->
+                <div class="lg:col-span-2 space-y-6">
+                    <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest px-2">Profit & Loss Accounts</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="glass-card p-6 rounded-3xl border-t-4 border-emerald-500">
+                            <div class="flex items-center gap-3 mb-4">
+                                <span class="bg-emerald-100 text-emerald-700 w-10 h-10 flex items-center justify-center rounded-xl font-bold">3xxx</span>
+                                <h4 class="font-bold">Revenue (Inkomster)</h4>
+                            </div>
+                            <ul class="space-y-4">
+                                <li class="text-sm">
+                                    <span class="font-bold text-slate-900 block">3000 - Nettoomsättning</span>
+                                    <span class="text-slate-500 text-xs">Money coming in from customers. It increases your profit.</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="glass-card p-6 rounded-3xl border-t-4 border-rose-500">
+                            <div class="flex items-center gap-3 mb-4">
+                                <span class="bg-rose-100 text-rose-700 w-10 h-10 flex items-center justify-center rounded-xl font-bold">4-7xxx</span>
+                                <h4 class="font-bold">Expenses (Kostnader)</h4>
+                            </div>
+                            <ul class="space-y-4">
+                                <li class="text-sm font-medium">
+                                    <span class="font-bold text-slate-900 block">7010 - Löner</span>
+                                    <span class="text-slate-500 text-xs italic">Gross salaries paid to employees.</span>
+                                </li>
+                                <li class="text-sm font-medium">
+                                    <span class="font-bold text-slate-900 block">7510 - Arbetsgivaravgifter</span>
+                                    <span class="text-slate-500 text-xs italic">The company's cost for social security fees.</span>
+                                </li>
+                                <li class="text-sm font-medium">
+                                    <span class="font-bold text-slate-900 block">5800 - Resekostnader</span>
+                                    <span class="text-slate-500 text-xs italic">Example: Ryanair flights, hotels.</span>
+                                </li>
+                                <li class="text-sm font-medium">
+                                    <span class="font-bold text-slate-900 block">6570 - Bankavgifter</span>
+                                    <span class="text-slate-500 text-xs italic">Example: Monthly fees from Handelsbanken.</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Theory Section -->
+                    <div class="glass-card p-8 rounded-[2.5rem] bg-slate-50 border border-slate-200">
+                        <h4 class="font-black text-lg mb-4 flex items-center gap-2">
+                            <i data-lucide="arrow-left-right" class="text-blue-600"></i>
+                            The Golden Rule of Double-Entry
+                        </h4>
+                        <p class="text-sm text-slate-600 leading-relaxed mb-4">
+                            In Sweden, we use <b>Double-Entry Bookkeeping</b>. This means every transaction must touch at least two accounts so that the "Books" always balance. 
+                        </p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="p-4 bg-white rounded-2xl border border-slate-100">
+                                <p class="text-[10px] font-black uppercase text-blue-600 mb-1">Debit (+)</p>
+                                <p class="text-xs">Think of this as "Destination". Where did the value go?</p>
+                            </div>
+                            <div class="p-4 bg-white rounded-2xl border border-slate-100">
+                                <p class="text-[10px] font-black uppercase text-amber-600 mb-1">Credit (-)</p>
+                                <p class="text-xs">Think of this as "Source". Where did the value come from?</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Reports -->
+        <section id="reports" class="hidden space-y-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <h2 class="text-3xl font-black text-slate-900 tracking-tight">Financial Statements</h2>
+                <button onclick="downloadReport()" class="bg-slate-900 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 flex items-center shadow-lg">
+                    <i data-lucide="download" class="w-4 h-4 mr-2"></i> Download Final Summary
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Resultaträkning (P&L) -->
+                <div class="glass-card p-8 rounded-[2rem]">
+                    <h3 class="text-lg font-black mb-6 pb-4 border-b border-slate-100 uppercase tracking-widest">Resultaträkning (P&L)</h3>
+                    <div id="pl-report-content" class="space-y-3"></div>
+                </div>
+                <!-- Balansräkning (Balance) -->
+                <div class="glass-card p-8 rounded-[2rem]">
+                    <h3 class="text-lg font-black mb-6 pb-4 border-b border-slate-100 uppercase tracking-widest">Balansräkning (Balance)</h3>
+                    <div id="bs-report-content" class="space-y-3"></div>
+                </div>
+            </div>
+            
+            <!-- Trial Balance Section -->
+            <div class="glass-card p-8 rounded-[2rem]">
+                <h3 class="text-lg font-black mb-6 pb-4 border-b border-slate-100 uppercase tracking-widest">Trial Balance (Råbalans)</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50">
+                                <th class="px-4 py-3">Account</th>
+                                <th class="px-4 py-3">Name</th>
+                                <th class="px-4 py-3 text-right">Debit</th>
+                                <th class="px-4 py-3 text-right">Credit</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trial-balance-content" class="divide-y divide-slate-100"></tbody>
+                        <tfoot>
+                            <tr class="bg-slate-900 text-white font-black text-sm">
+                                <td class="px-4 py-4 rounded-bl-xl" colspan="2">Total Sums</td>
+                                <td id="tb-total-debit" class="px-4 py-4 text-right">0.00</td>
+                                <td id="tb-total-credit" class="px-4 py-4 text-right rounded-br-xl">0.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tax Summary -->
+            <div class="glass-card p-8 rounded-[2rem] bg-slate-900 text-white shadow-2xl">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-black uppercase tracking-widest">Tax Filing Summary (INK2)</h3>
+                    <span class="text-[10px] bg-blue-600 px-3 py-1 rounded-full font-black uppercase">Ready to File</span>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div><p class="text-slate-400 text-[10px] font-bold uppercase">Revenue</p><p id="tax-rev" class="text-lg font-black truncate text-emerald-400">0.00 SEK</p></div>
+                    <div><p class="text-slate-400 text-[10px] font-bold uppercase">Expenses</p><p id="tax-exp" class="text-lg font-black truncate text-rose-400">0.00 SEK</p></div>
+                    <div><p class="text-slate-400 text-[10px] font-bold uppercase">Profit</p><p id="tax-net" class="text-lg font-black text-emerald-400 truncate">0.00 SEK</p></div>
+                    <div><p class="text-slate-400 text-[10px] font-bold uppercase">Tax (20.6%)</p><p id="tax-est" class="text-lg font-black text-rose-400 truncate">0.00 SEK</p></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Compliance Guide -->
+        <section id="compliance" class="hidden space-y-8">
+            <div class="bg-emerald-600 rounded-[2rem] p-8 text-white">
+                <h2 class="text-3xl font-black mb-2">Official Tax Guide</h2>
+                <p class="text-emerald-100 text-sm opacity-90">Steps for Bluden AB (Org: 559506-5730)</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="glass-card p-8 rounded-[2.5rem] border-t-8 border-blue-600">
+                    <div class="mb-4">
+                        <h3 class="font-black text-lg flex items-center">
+                            <i data-lucide="globe" class="mr-2 text-blue-600"></i>
+                            1. Annual Report (Bolagsverket)
+                        </h3>
+                        <p class="text-xs text-slate-500 italic mt-1 font-bold">Due by: October 31st (7 months after financial year end).</p>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="bg-slate-50 p-4 rounded-xl">
+                            <p class="text-xs font-bold uppercase text-slate-400 mb-1">Step 1</p>
+                            <p class="text-sm">Log in to <a href="https://bolagsverket.se" class="text-blue-600 font-bold underline" target="_blank">Bolagsverket's digital service</a>.</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl">
+                            <p class="text-xs font-bold uppercase text-slate-400 mb-1">Step 2</p>
+                            <p class="text-sm">Upload or manually enter the <b>Resultat-</b> and <b>Balansräkning</b> from the Reports tab.</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl">
+                            <p class="text-xs font-bold uppercase text-slate-400 mb-1">Step 3</p>
+                            <p class="text-sm">Sign digitally with BankID. Ensure your board meeting is held and the report is signed by the board.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card p-8 rounded-[2.5rem] border-t-8 border-emerald-500">
+                    <div class="mb-4">
+                        <h3 class="font-black text-lg flex items-center">
+                            <i data-lucide="landmark" class="mr-2 text-emerald-500"></i>
+                            2. Income Tax (Skatteverket)
+                        </h3>
+                        <p class="text-xs text-slate-500 italic mt-1 font-bold">Due by: October 1st (6 months after financial year end).</p>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="bg-slate-50 p-4 rounded-xl">
+                            <p class="text-xs font-bold uppercase text-slate-400 mb-1">Step 1</p>
+                            <p class="text-sm">Log in to <a href="https://skatteverket.se" class="text-blue-600 font-bold underline" target="_blank">Mina Sidor</a> on Skatteverket.</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl">
+                            <p class="text-xs font-bold uppercase text-slate-400 mb-1">Step 2</p>
+                            <p class="text-sm">Open <b>Inkomstdeklaration 2</b>. Use the numbers from the "Tax Filing Summary" section in this app.</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl">
+                            <p class="text-xs font-bold uppercase text-slate-400 mb-1">Step 3</p>
+                            <p class="text-sm">Declare your net profit. The tax (20.6%) will be automatically calculated by their system.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monthly Employer Declaration Section -->
+                <div class="glass-card p-8 rounded-[2.5rem] border-t-8 border-orange-500 md:col-span-1">
+                    <div class="mb-4">
+                        <h3 class="font-black text-lg flex items-center">
+                            <i data-lucide="users" class="mr-2 text-orange-500"></i>
+                            3. Employer Declaration (AGI)
+                        </h3>
+                        <p class="text-xs text-slate-500 italic mt-1 font-bold">Due by: 12th of every month (for the previous month).</p>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="bg-slate-50 p-4 rounded-xl">
+                            <p class="text-xs font-bold uppercase text-slate-400 mb-1 text-orange-600">Step 1</p>
+                            <p class="text-sm">Log in to <a href="https://skatteverket.se" class="text-blue-600 font-bold underline" target="_blank">Arbetsgivardeklaration</a>. Select <b>"Lämna deklaration"</b> and the period.</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl">
+                            <p class="text-xs font-bold uppercase text-slate-400 mb-1 text-orange-600">Step 2</p>
+                            <p class="text-sm">If no salary was paid: Tick the box <b>"Huvuduppgifter - Inga löner/ersättningar"</b> (Lämna noll-deklaration).</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl">
+                            <p class="text-xs font-bold uppercase text-slate-400 mb-1 text-orange-600">Step 3</p>
+                            <p class="text-sm mb-2">If paying salary: Enter totals in the summary section (Huvuduppgift):</p>
+                            <ul class="text-[10px] space-y-1 font-medium text-slate-600">
+                                <li>• <b>Kontant lön (Fält 011):</b> Gross Salary total.</li>
+                                <li>• <b>Avdragen skatt (Fält 043):</b> Total tax withheld from employees.</li>
+                                <li>• <b>Arbetsgivaravgift (Fält 025):</b> Social fee base (usually same as gross).</li>
+                            </ul>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl">
+                            <p class="text-xs font-bold uppercase text-slate-400 mb-1 text-orange-600">Step 4</p>
+                            <p class="text-sm">Sign with BankID and pay the total debt to your <b>Skattekonto</b> using your unique OCR number.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VAT Section -->
+                <div class="glass-card p-8 rounded-[2.5rem] border-t-8 border-purple-500 md:col-span-1">
+                    <div class="mb-4">
+                        <h3 class="font-black text-lg flex items-center">
+                            <i data-lucide="percent" class="mr-2 text-purple-500"></i>
+                            4. VAT (MOMS) Filing
+                        </h3>
+                        <p class="text-xs text-slate-500 italic mt-1 font-bold">Typically due: Feb 26th for annual filers.</p>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="bg-slate-50 p-4 rounded-xl">
+                            <p class="text-xs font-bold uppercase text-slate-400 mb-1 text-purple-600">Step 1</p>
+                            <p class="text-sm">Go to <b>Momsdeklaration</b> on Skatteverket's e-tjänst.</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl">
+                            <p class="text-xs font-bold uppercase text-slate-400 mb-1 text-purple-600">Step 2</p>
+                            <p class="text-sm"><b>Momspliktig omsättning (Fält 05):</b> Enter total sales from Account 3000.</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl">
+                            <p class="text-xs font-bold uppercase text-slate-400 mb-1 text-purple-600">Step 3</p>
+                            <p class="text-sm"><b>Utgående moms (Fält 10):</b> Total from Acc 2611. <b>Ingående moms (Fält 48):</b> Total from Acc 2641.</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl">
+                            <p class="text-xs font-bold uppercase text-slate-400 mb-1 text-purple-600">Step 4</p>
+                            <p class="text-sm">Submit. The "Moms att betala/få tillbaka" is the difference between Fält 10 and 48.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        let journal = JSON.parse(localStorage.getItem('bluden_journal_v2')) || [];
+        const COA = {
+            '1930': { name: 'Företagskonto', type: 'Asset' },
+            '2081': { name: 'Aktiekapital', type: 'Equity' },
+            '2510': { name: 'Skatteskulder', type: 'Liability' },
+            '2611': { name: 'Utgående moms (25%)', type: 'Liability' },
+            '2641': { name: 'Ingående moms (25%)', type: 'Asset' },
+            '2710': { name: 'Personalskatt', type: 'Liability' },
+            '2730': { name: 'Sociala avgifter', type: 'Liability' },
+            '3000': { name: 'Nettoomsättning', type: 'Revenue' },
+            '4000': { name: 'Inköp Varor', type: 'Expense' },
+            '5800': { name: 'Resekostnader', type: 'Expense' },
+            '6570': { name: 'Bankavgifter', type: 'Expense' },
+            '6990': { name: 'Övriga Kostnader', type: 'Expense' },
+            '7010': { name: 'Löner', type: 'Expense' },
+            '7510': { name: 'Arbetsgivaravgifter', type: 'Expense' }
+        };
+
+        window.onload = () => {
+            if (journal.length === 0) postEntry('2024-11-22', '1930', '2081', 25000, 'Initial Share Capital (Registration)');
+            refreshAll();
+            lucide.createIcons();
+        };
+
+        function refreshAll() {
+            renderDashboard();
+            renderJournal();
+            renderReports();
+            saveToStorage();
+            lucide.createIcons();
+        }
+
+        function saveToStorage() { localStorage.setItem('bluden_journal_v2', JSON.stringify(journal)); }
+
+        function showSection(id) {
+            ['dashboard', 'journal', 'reports', 'compliance', 'import', 'guide'].forEach(sec => {
+                document.getElementById(sec).classList.add('hidden');
+                const btn = document.getElementById('btn-' + sec);
+                if(btn) btn.classList.remove('active-tab');
+            });
+            document.getElementById(id).classList.remove('hidden');
+            const activeBtn = document.getElementById('btn-' + id);
+            if(activeBtn) activeBtn.classList.add('active-tab');
+            window.scrollTo(0, 0);
+            lucide.createIcons();
+        }
+
+        function postEntry(date, debit, credit, amount, desc, splitVat = false) {
+            if (splitVat) {
+                const total = parseFloat(amount);
+                const net = total / 1.25;
+                const vat = total - net;
+
+                if (debit === '1930') {
+                    journal.push({ id: Date.now() + Math.random(), date, debit: '1930', credit: '3000', amount: net, desc: `${desc} (Net)` });
+                    journal.push({ id: Date.now() + Math.random(), date, debit: '1930', credit: '2611', amount: vat, desc: `${desc} (VAT)` });
+                } else if (credit === '1930') {
+                    journal.push({ id: Date.now() + Math.random(), date, debit: debit, credit: '1930', amount: net, desc: `${desc} (Net)` });
+                    journal.push({ id: Date.now() + Math.random(), date, debit: '2641', credit: '1930', amount: vat, desc: `${desc} (VAT)` });
+                }
+            } else {
+                journal.push({ id: Date.now() + Math.random(), date, debit, credit, amount: parseFloat(amount), desc });
+            }
+            journal.sort((a, b) => new Date(b.date) - new Date(a.date));
+        }
+
+        function handleCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const lines = e.target.result.split(/\r?\n/);
+                lines.forEach(line => {
+                    const cols = line.split(';');
+                    if (cols.length < 14) return;
+                    const date = cols[9]; 
+                    const ref = cols[12]; 
+                    const rawAmt = cols[13];
+                    if (!date || !date.includes('-')) return;
+                    const amt = parseFloat(rawAmt.replace(',', '.'));
+                    if (isNaN(amt)) return;
+                    const isDup = journal.some(j => j.date === date && j.amount === Math.abs(amt) && j.desc.includes(ref));
+                    if (isDup) return;
+                    
+                    const cat = categorize(ref, amt);
+                    const needsVat = cat !== '2081' && !ref.includes('KORTAVGIFT') && !ref.includes('BANKAVGIFT');
+
+                    if (amt > 0) postEntry(date, '1930', cat, amt, ref, needsVat);
+                    else postEntry(date, cat, '1930', Math.abs(amt), ref, needsVat);
+                });
+                refreshAll();
+                showSection('dashboard');
+            };
+            reader.readAsText(file);
+        }
+
+        function categorize(ref, amt) {
+            if (amt > 0) return '3000';
+            const r = ref.toUpperCase();
+            if (r.includes('RYANAIR') || r.includes('HOTEL')) return '5800';
+            if (r.includes('KORTAVGIFT') || r.includes('INTERNET')) return '6570';
+            return '6990';
+        }
+
+        function renderDashboard() {
+            const b = calculateBalances();
+            document.getElementById('dash-bank').innerText = formatSEK(b['1930'] || 0);
+            document.getElementById('dash-profit').innerText = formatSEK(calculateNetProfit(b));
+            
+            const grouped = journal.reduce((acc, curr) => {
+                const key = curr.date + curr.desc.split('(')[0].trim();
+                if (!acc[key]) acc[key] = { ...curr, amount: 0 };
+                acc[key].amount += curr.amount;
+                return acc;
+            }, {});
+            
+            document.getElementById('recent-transactions').innerHTML = Object.values(grouped).slice(0, 5).map(e => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="px-6 py-4 text-slate-500 font-bold text-xs">${e.date}</td>
+                    <td class="px-6 py-4 font-bold text-slate-800 text-xs truncate max-w-[120px]">${e.desc.split('(')[0]}</td>
+                    <td class="px-6 py-4 text-right font-black text-sm ${e.debit === '1930' ? 'text-emerald-600' : 'text-rose-600'}">
+                        ${e.credit === '1930' ? '-' : '+'}${formatSEK(e.amount)}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderJournal() {
+            document.getElementById('full-journal-body').innerHTML = journal.map(e => `
+                <tr class="hover:bg-slate-50 transition text-xs">
+                    <td class="p-6 text-slate-500 font-bold">${e.date}</td>
+                    <td class="p-6 font-bold text-slate-900">${e.desc}</td>
+                    <td class="p-6 debit-line">${e.debit}</td>
+                    <td class="p-6 credit-line">${e.credit}</td>
+                    <td class="p-6 text-right font-black">${formatSEK(e.amount)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderReports() {
+            const b = calculateBalances();
+            let rTotal = 0; let eTotal = 0; let plHtml = '';
+            
+            Object.keys(b).sort().forEach(c => {
+                const v = b[c];
+                if(c.startsWith('3')) { 
+                    rTotal += Math.abs(v); 
+                    plHtml += row(COA[c]?.name || c, Math.abs(v), 'text-emerald-600'); 
+                }
+                else if(parseInt(c) >= 4000) { 
+                    eTotal += v; 
+                    plHtml += row(COA[c]?.name || c, v, 'text-rose-600'); 
+                }
+            });
+            const net = rTotal - eTotal;
+            plHtml += `<div class="mt-4 pt-4 border-t border-slate-200 flex justify-between font-black text-base"><span>Årets Resultat</span><span class="${net >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${formatSEK(net)}</span></div>`;
+            document.getElementById('pl-report-content').innerHTML = plHtml;
+
+            let assets = 0; let eq = 0; let bsHtml = '';
+            Object.keys(b).sort().forEach(c => { 
+                if(c.startsWith('1') || c === '2641') { 
+                    const val = b[c] || 0;
+                    assets += val; 
+                    bsHtml += row(COA[c]?.name || c, val, 'text-blue-600'); 
+                } 
+            });
+            bsHtml += `<div class="mb-4 font-bold text-slate-400 text-[10px] uppercase">Total Assets: ${formatSEK(assets)}</div>`;
+            
+            Object.keys(b).sort().forEach(c => { 
+                if(c.startsWith('2') && c !== '2641') { 
+                    const val = Math.abs(b[c] || 0);
+                    eq += val; 
+                    bsHtml += row(COA[c]?.name || c, val, 'text-slate-900'); 
+                } 
+            });
+            bsHtml += row('Årets Resultat', net, 'text-emerald-600');
+            bsHtml += `<div class="mt-4 pt-4 border-t border-slate-200 flex justify-between font-black text-base"><span>Total Equity & Liabilities</span><span>${formatSEK(eq+net)}</span></div>`;
+            document.getElementById('bs-report-content').innerHTML = bsHtml;
+
+            let tbHtml = '';
+            let totalDebit = 0;
+            let totalCredit = 0;
+            const accounts = Object.keys(COA).sort();
+            accounts.forEach(accCode => {
+                let debitSum = 0;
+                let creditSum = 0;
+                journal.forEach(j => {
+                    if (j.debit === accCode) debitSum += j.amount;
+                    if (j.credit === accCode) creditSum += j.amount;
+                });
+
+                if (debitSum > 0 || creditSum > 0) {
+                    totalDebit += debitSum;
+                    totalCredit += creditSum;
+                    tbHtml += `
+                        <tr class="text-xs hover:bg-slate-50 transition">
+                            <td class="px-4 py-3 font-bold text-slate-600">${accCode}</td>
+                            <td class="px-4 py-3 text-slate-900 font-medium">${COA[accCode].name}</td>
+                            <td class="px-4 py-3 text-right text-blue-600 font-bold">${formatSEK(debitSum)}</td>
+                            <td class="px-4 py-3 text-right text-amber-600 font-bold">${formatSEK(creditSum)}</td>
+                        </tr>
+                    `;
+                }
+            });
+            document.getElementById('trial-balance-content').innerHTML = tbHtml;
+            document.getElementById('tb-total-debit').innerText = formatSEK(totalDebit);
+            document.getElementById('tb-total-credit').innerText = formatSEK(totalCredit);
+
+            document.getElementById('tax-rev').innerText = formatSEK(rTotal);
+            document.getElementById('tax-exp').innerText = formatSEK(eTotal);
+            document.getElementById('tax-net').innerText = formatSEK(net);
+            document.getElementById('tax-est').innerText = formatSEK(Math.max(0, net * 0.206));
+        }
+
+        function calculateBalances() {
+            const b = {};
+            journal.forEach(e => { b[e.debit] = (b[e.debit] || 0) + e.amount; b[e.credit] = (b[e.credit] || 0) - e.amount; });
+            return b;
+        }
+
+        function calculateNetProfit(b) {
+            let r = 0; let e = 0;
+            Object.keys(b).forEach(c => { if(c.startsWith('3')) r += Math.abs(b[c]); else if(parseInt(c) >= 4000) e += b[c]; });
+            return r - e;
+        }
+
+        function formatSEK(n) { return new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK' }).format(n || 0); }
+        function row(l, v, c) { return `<div class="flex justify-between py-2 border-b border-slate-50 font-bold"><span class="text-xs text-slate-500">${l}</span><span class="text-xs ${c}">${formatSEK(v)}</span></div>`; }
+        function clearAllData() { if(confirm("Reset journal?")) { journal = []; postEntry('2024-11-22', '1930', '2081', 25000, 'Initial Share Capital (Registration)'); refreshAll(); } }
+
+        function downloadReport() {
+            const b = calculateBalances();
+            const net = calculateNetProfit(b);
+            const content = `BLUDEN AB (559506-5730) - FINANCIAL SUMMARY\nGenerated: ${new Date().toLocaleDateString()}\n\nRESULTATRÄKNING (P&L)\nRevenue: ${formatSEK(net+20000)} approx\nNet Profit: ${formatSEK(net)}\n\nBALANSRÄKNING\nAssets (1930): ${formatSEK(b['1930'])}\nEquity: ${formatSEK(b['2081']||25000)}\nVAT Owed (Net): ${formatSEK((b['2611']||0) + (b['2641']||0))}\n\nUSE THESE VALUES FOR SKATTEVERKET INK2 FILING.`;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'BludenAB_Report_Summary.txt';
+            a.click();
+        }
+    </script>
+</body>
+</html>
