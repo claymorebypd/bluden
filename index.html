@@ -25,17 +25,11 @@
     <!-- Navigation -->
     <nav class="bg-slate-900 text-white sticky top-0 z-50 shadow-2xl">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div class="flex items-center space-x-4">
-                <!-- Enhanced Logo Section -->
-                <div class="bg-white p-2 rounded-xl shadow-inner flex items-center justify-center min-w-[64px] min-h-[64px]">
-                    <img src="./images/Bluden Logo.png" 
-                         alt="Bluden AB Logo" 
-                         class="w-12 h-12 md:w-16 md:h-16 object-contain" 
-                         onerror="this.src='./images/Bluden Logo.png'; this.onerror=function(){this.parentElement.innerHTML='<div class=\'bg-blue-600 p-3 rounded-lg text-white\'><i data-lucide=\'landmark\' class=\'w-8 h-8\'></i></div>'};">
-                </div>
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-600 p-2 rounded-lg"><i data-lucide="landmark" class="w-6 h-6"></i></div>
                 <div>
-                    <h1 class="text-2xl font-extrabold tracking-tight leading-none mb-1">Bluden AB</h1>
-                    <p class="text-[11px] text-blue-400 font-bold uppercase tracking-widest leading-none">Org: 559506-5730</p>
+                    <h1 class="text-xl font-extrabold tracking-tight">Bluden AB</h1>
+                    <p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest">Org: 559506-5730</p>
                 </div>
             </div>
             <div class="flex flex-wrap justify-center gap-1 text-xs font-bold">
@@ -359,6 +353,7 @@
                             <p class="text-sm">Open <b>Inkomstdeklaration 2</b>. Use the numbers from the "Tax Filing Summary" section in this app.</p>
                         </div>
                         <div class="bg-slate-50 p-4 rounded-xl">
+                            <p class="text-xs font-bold uppercase text-slate-400 mb-1">Step 3</p>
                             <p class="text-sm">Declare your net profit. The tax (20.6%) will be automatically calculated by their system.</p>
                         </div>
                     </div>
@@ -468,13 +463,11 @@
 
         function showSection(id) {
             ['dashboard', 'journal', 'reports', 'compliance', 'import', 'guide'].forEach(sec => {
-                const el = document.getElementById(sec);
-                if(el) el.classList.add('hidden');
+                document.getElementById(sec).classList.add('hidden');
                 const btn = document.getElementById('btn-' + sec);
                 if(btn) btn.classList.remove('active-tab');
             });
-            const target = document.getElementById(id);
-            if(target) target.classList.remove('hidden');
+            document.getElementById(id).classList.remove('hidden');
             const activeBtn = document.getElementById('btn-' + id);
             if(activeBtn) activeBtn.classList.add('active-tab');
             window.scrollTo(0, 0);
